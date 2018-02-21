@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             numSteps = 0;
             refStep = 0;
             distance = 0;
+            stepLength = 0;
             TvSteps.setText(TEXT_NUM_STEPS + numSteps);
             TvDistance.setText(TEXT_DISTANCE + distance);
             Log.d(TAG, "The database is empty");
@@ -129,13 +130,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void onClick(View arg0){
                 numSteps++;
-                distance =  distance + 45;//stepLength;
-
+                distance =  distance + stepLength;
+                String distUnit = "";
                 DecimalFormat df = new DecimalFormat("0.00");
-                String dist2 = df.format(distance); // transforms the data to 2 Decimal places
+                String dist2dp = df.format(distance/100); // transforms the data to 2 Decimal places
 
                 TvSteps.setText(TEXT_NUM_STEPS + numSteps);
-                TvDistance.setText(TEXT_DISTANCE + distance +"M"); // converts to meters
+
+                if(distance >= 0 && distance < 99999.50){ // distance is less than 1KM
+                    distUnit = "M";
+                }
+                else if (distance >= 99999.50){ // distance is >= 1KM
+                    distUnit = "KM";
+                    dist2dp = df.format(distance/100000);
+                }
+                else{
+
+                }
+                TvDistance.setText(TEXT_DISTANCE + dist2dp + distUnit); // converts to meters
                 // send value to the data base here
                 addData(numSteps, 2);
                 mDatabaseHelper.addDistance(distance);
@@ -155,7 +167,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         TvTime.setText("Walking time: " + walkingTime);
                     }
                     else{
-                        //toastMessage("Too slow fam");
                         Log.d(TAG, "" + timeInterval);
                     }
 
