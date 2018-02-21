@@ -21,14 +21,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener, StepListener {
+public class StepActivity extends AppCompatActivity implements SensorEventListener, StepListener {
     private TextView TvSteps, TvTime, TvDistance;
     private StepDetector simpleStepDetector;
     private SensorManager sensorManager;
     private Sensor accel;
     private static final String TEXT_NUM_STEPS = "Number of Steps: "; // output
     private static final String TEXT_DISTANCE = "Distance: ";
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "StepActivity";
     private int numSteps,refStep, newStepCount;
     private long startTime,timeInterval,firstStepTime, nextStepTime, walkingTime;
     private double height, distance, stepLength;
@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.step_activity);
 
 
 
@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
 
 
-        sensorManager.registerListener(MainActivity.this, accel, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorManager.registerListener(StepActivity.this, accel, SensorManager.SENSOR_DELAY_FASTEST);
 
 
         BtnClear.setOnClickListener(new View.OnClickListener() {
@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             @Override
             public void onClick(View arg0){
-                Intent intent = new Intent(MainActivity.this,GraphActivity.class);
+                Intent intent = new Intent(StepActivity.this,GraphActivity.class);
                 startActivity(intent);
             }
         });
