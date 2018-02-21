@@ -133,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 distance =  distance + stepLength;
                 String distUnit = "";
                 DecimalFormat df = new DecimalFormat("0.00");
-                String dist2dp = df.format(distance/100); // transforms the data to 2 Decimal places
+                String dist2dp = df.format(distance/100); // transforms the data to 2 Decimal places.
 
                 TvSteps.setText(TEXT_NUM_STEPS + numSteps);
 
