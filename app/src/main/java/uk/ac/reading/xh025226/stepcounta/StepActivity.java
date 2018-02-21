@@ -54,7 +54,6 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         TvDistance = (TextView) findViewById(R.id.tv_distance);
         Button BtnClear = (Button) findViewById(R.id.btn_clear);
         Button BtnGraph = (Button) findViewById(R.id.btn_graph);
-        Button fakeWalk = (Button) findViewById(R.id.button);
 
         timeInterval = 0;
         firstStepTime = 0;
@@ -73,7 +72,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
             distance = 0;
             stepLength = 0;
             TvSteps.setText(TEXT_NUM_STEPS + numSteps);
-            TvDistance.setText(TEXT_DISTANCE + distance);
+            displayDistance(distance);
             Log.d(TAG, "The database is empty");
         }
         else{
@@ -90,8 +89,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
             //-- Remove End
             stepLength = height * 0.415;//ratio of height to stepLength
             TvSteps.setText(TEXT_NUM_STEPS + numSteps);
-            TvDistance.setText(TEXT_DISTANCE + distance);
-
+            displayDistance(distance);
 
 
         }
@@ -111,7 +109,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
                 toastMessage("Database cleared");
                 Log.d(TAG, "The dataBase was deleted.");
                 TvSteps.setText(TEXT_NUM_STEPS + numSteps);
-                TvDistance.setText(TEXT_DISTANCE + distance);
+                displayDistance(distance);
 
             }
         });
@@ -125,56 +123,6 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
             }
         });
 
-        fakeWalk.setOnClickListener(new View.OnClickListener(){
-
-            @Override
-            public void onClick(View arg0){
-                numSteps++;
-                distance =  distance + stepLength;
-                String distUnit = "";
-                DecimalFormat df = new DecimalFormat("0.00");
-                String dist2dp = df.format(distance/100); // transforms the data to 2 Decimal places.
-
-                TvSteps.setText(TEXT_NUM_STEPS + numSteps);
-
-                if(distance >= 0 && distance < 99999.50){ // distance is less than 1KM
-                    distUnit = "M";
-                }
-                else if (distance >= 99999.50){ // distance is >= 1KM
-                    distUnit = "KM";
-                    dist2dp = df.format(distance/100000);
-                }
-                else{
-
-                }
-                TvDistance.setText(TEXT_DISTANCE + dist2dp + distUnit); // converts to meters
-                // send value to the data base here
-                addData(numSteps, 2);
-                mDatabaseHelper.addDistance(distance);
-
-                if (firstStepTime == 0){ // makes sure this is the first step
-                    firstStepTime = SystemClock.elapsedRealtime();
-                }
-                else{
-                    // Compare the time of the first step to the next step
-                    nextStepTime = SystemClock.elapsedRealtime();
-                    timeInterval = nextStepTime - firstStepTime;
-                    firstStepTime = nextStepTime;
-                    if(timeInterval<= 2500){
-                        walkingTime = walkingTime + timeInterval;
-
-                        Log.d(TAG, "Walking time: " + walkingTime);
-                        TvTime.setText("Walking time: " + walkingTime);
-                    }
-                    else{
-                        Log.d(TAG, "" + timeInterval);
-                    }
-
-                }
-
-
-            }
-        });
 
         updateTimer.schedule(new TimerTask() {
             public void run() {
@@ -221,14 +169,35 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void step(long timeNs) {
-        // Calculates the intervals between steps and the elapsed time
-        //timeInterval = SystemClock.elapsedRealtime() - startTime;
-        //toastMessage("Time: " + timeInterval);
-        //Log.d(TAG, "Time: " + timeInterval);
+
         numSteps++;
+        distance =  distance + stepLength;
+
         TvSteps.setText(TEXT_NUM_STEPS + numSteps);
+        displayDistance(distance);
         // send value to the data base here
         addData(numSteps, 2);
+        mDatabaseHelper.addDistance(distance);
+
+        if (firstStepTime == 0){ // makes sure this is the first step
+            firstStepTime = SystemClock.elapsedRealtime();
+        }
+        else{
+            // Compare the time of the first step to the next step
+            nextStepTime = SystemClock.elapsedRealtime();
+            timeInterval = nextStepTime - firstStepTime;
+            firstStepTime = nextStepTime;
+            if(timeInterval<= 2500){
+                walkingTime = walkingTime + timeInterval;
+
+                Log.d(TAG, "Walking time: " + walkingTime);
+                TvTime.setText("Walking time: " + walkingTime);
+            }
+            else{
+                Log.d(TAG, "" + timeInterval);
+            }
+
+        }
 
         if (firstStepTime == 0){ // makes sure this is the first step
             firstStepTime = SystemClock.elapsedRealtime();
@@ -293,9 +262,32 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         }
 
     }
+
+    /**
+     * Converts and displays the distance in Meters(M) or kilometers(KM)
+     * @param distance The distance in centimeter (CM)
+     * */
+    private void displayDistance(double distance){
+        String distUnit = "";
+        DecimalFormat df = new DecimalFormat("0.00");
+        String dist2dp = df.format(distance/100); // transforms the data to 2 Decimal places.
+
+        if(distance >= 0 && distance < 99999.50){ // distance is less than 1KM
+            distUnit = "M";
+        }
+        else if (distance >= 99999.50){ // distance is >= 1KM
+            distUnit = "KM";
+            dist2dp = df.format(distance/100000);
+        }
+        else{
+
+        }
+        TvDistance.setText(TEXT_DISTANCE + dist2dp + distUnit); // converts to meters
+
+    }
     /**
      * customizable toast
-     * @param message
+     * @param message the message to be displayed
      */
     private void toastMessage(String message){
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
