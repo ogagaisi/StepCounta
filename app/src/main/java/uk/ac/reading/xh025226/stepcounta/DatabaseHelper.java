@@ -226,13 +226,9 @@ public class DatabaseHelper extends SQLiteOpenHelper{
     public void clearDataBase(){
         SQLiteDatabase db = this.getWritableDatabase();
         String clearDBQuery = "DELETE FROM " + TABLE_NAME;
-        String resetAutoIncrement = "DELETE FROM sqlite_sequence where name="+ TABLE_NAME;
+        String resetAutoIncrement = "DELETE FROM sqlite_sequence where name='"+ TABLE_NAME+"'";
         db.execSQL(clearDBQuery);
         db.execSQL(resetAutoIncrement);
-
-        //String  resetAutoIncre = "ALTER TABLE " + TABLE_NAME+ " AUTO_INCREMENT = 0";
-        //db.delete(TABLE_NAME, null, null);
-
     }
 
     public int getNoOfRows(){ // Returns the number of rows in the database
