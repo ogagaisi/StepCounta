@@ -225,6 +225,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         if(numSteps == stepGoal){
             // show the notification
             Log.d(TAG, "Step goal has been reached: " + stepGoal);
+
             notificationManager.notify(notificationId, mBuilder.build());
         }
 
