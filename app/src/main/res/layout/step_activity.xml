@@ -42,9 +42,14 @@
         android:id="@+id/btn_clear"
         android:layout_width="300sp"
         android:layout_height="wrap_content"
-        android:text="clear steps"
+        android:text="clear data"
          />
 
+    <Button
+        android:id="@+id/btn_setGoal"
+        android:layout_width="300sp"
+        android:layout_height="wrap_content"
+        android:text="set goal"/>
 
 
 </LinearLayout>

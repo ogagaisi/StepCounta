@@ -25,4 +25,6 @@ dependencies {
     compile files('libs/GraphView-4.2.1.jar')
     compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'com.android.support:design:23.1.1'
+
+
 }

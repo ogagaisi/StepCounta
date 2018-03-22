@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">StepCounta</string>
     <string name="title_activity_input">InputActivity</string>
+    <string name="title_activity_set_step_goal">setStepGoal</string>
 </resources>

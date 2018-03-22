@@ -27,16 +27,23 @@ public class InputActivity extends AppCompatActivity {
         submit.setOnClickListener(new View.OnClickListener(){
             @Override
              public void onClick(View arg0){
-                double value = Double.parseDouble(eText.getText().toString()); // convert input to a double
-                // value is too small
-                if(value < 54.61) { //the recorded shortest man in world
-                    tvMessage.setText("The height you entered was too small, Please input another value");
+                if(eText.getText().toString().equals("")){
+                    tvMessage.setText("Please input a value before submitting");
                 }
                 else{
-                    mDatabaseHelper.addHeigth(value);
-                    Intent intent = new Intent(InputActivity.this,StepActivity.class);
-                    startActivity(intent);
+                    double value = Double.parseDouble(eText.getText().toString()); // convert input to a double
+                    // value is too small
+                    if(value < 54.61) { //the recorded shortest man in world
+                        tvMessage.setText("The height you entered was too small, Please input another value");
+                    }
+                    else{
+                        mDatabaseHelper.addHeigth(value);
+                        Intent intent = new Intent(InputActivity.this,StepActivity.class);
+                        startActivity(intent);
+                    }
+
                 }
+
             }
 
         });

@@ -18,19 +18,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".StepActivity"
             android:configChanges="orientation|keyboardHidden"
-            android:screenOrientation="portrait">
-        </activity>
-
+            android:screenOrientation="portrait" />
         <activity
             android:name=".GraphActivity"
             android:configChanges="orientation|keyboardHidden"
-            android:screenOrientation="portrait">
-        </activity>
-
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".SetStepGoal"
+            android:label="@string/title_activity_set_step_goal"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity android:name=".AlertDetails"></activity>
     </application>
 
 </manifest>

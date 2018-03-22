@@ -1,5 +1,6 @@
 package uk.ac.reading.xh025226.stepcounta;
 
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.database.Cursor;
 import android.hardware.Sensor;
@@ -9,7 +10,9 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -28,11 +31,17 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
     private Sensor accel;
     private static final String TEXT_NUM_STEPS = "Number of Steps: "; // output
     private static final String TEXT_DISTANCE = "Distance: ";
-    private static final String TAG = "StepActivity";
-    private int numSteps,refStep, newStepCount;
+    private static final String TEXT_TIME = "Walking time: ";
+    private static final String TAG = "StepActivity", textTitle ="New Achievement", textContent ="You have reached your step goal, good job";
+    private int numSteps,refStep, newStepCount, stepGoal;
+    private static final int notificationId =1000;
     private long startTime,timeInterval,firstStepTime, nextStepTime, walkingTime;
     private double height, distance, stepLength;
     DatabaseHelper mDatabaseHelper;
+    Intent intentA;
+    NotificationManagerCompat notificationManager;
+    NotificationCompat.Builder mBuilder;
+
 
 
     @Override
@@ -40,6 +49,21 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.step_activity);
 
+
+        //Set the notification's tap action
+        intentA = new Intent(this, AlertDetails.class);
+        intentA.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);//helps preserve the user's expected navigation experience after they open the app via the notification.
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intentA, 0);
+
+        //Sets the notification content
+                mBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.trophy)
+                .setContentTitle(textTitle)
+                .setContentText(textContent)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                // Set the intent that will fire when the user taps the notification
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);//automatically removes the notification when the user taps it.
 
 
         // Get an instance of the SensorManager
@@ -52,14 +76,17 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         TvSteps = (TextView) findViewById(R.id.tv_steps);
         TvTime = (TextView)findViewById(R.id.tv_walkTime);
         TvDistance = (TextView) findViewById(R.id.tv_distance);
-        Button BtnClear = (Button) findViewById(R.id.btn_clear);
-        Button BtnGraph = (Button) findViewById(R.id.btn_graph);
+        Button btnClear = (Button) findViewById(R.id.btn_clear);
+        Button btnGraph = (Button) findViewById(R.id.btn_graph);
+        Button btnSetGoal = (Button) findViewById(R.id.btn_setGoal);
+        notificationManager = NotificationManagerCompat.from(this);
 
         timeInterval = 0;
         firstStepTime = 0;
         nextStepTime = 0;
         walkingTime = 0;
         height = 0;
+        stepGoal = 0;
 
         Timer updateTimer = new Timer();
 
@@ -98,27 +125,39 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         sensorManager.registerListener(StepActivity.this, accel, SensorManager.SENSOR_DELAY_FASTEST);
 
 
-        BtnClear.setOnClickListener(new View.OnClickListener() {
+        btnClear.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View arg0) {
                 mDatabaseHelper.clearDataBase();
+                mDatabaseHelper = DatabaseHelper.getInstance(StepActivity.this);
                 numSteps = 0;
                 refStep = 0;
                 distance = 0;
+                walkingTime = 0;
                 toastMessage("Database cleared");
                 Log.d(TAG, "The dataBase was deleted.");
                 TvSteps.setText(TEXT_NUM_STEPS + numSteps);
+                TvTime.setText(TEXT_TIME + walkingTime);
                 displayDistance(distance);
 
             }
         });
 
-        BtnGraph.setOnClickListener(new View.OnClickListener(){
+        btnGraph.setOnClickListener(new View.OnClickListener() {
 
             @Override
-            public void onClick(View arg0){
-                Intent intent = new Intent(StepActivity.this,GraphActivity.class);
+            public void onClick(View arg0) {
+                Intent intent = new Intent(StepActivity.this, GraphActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        btnSetGoal.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View arg0) {
+                Intent intent = new Intent(StepActivity.this, SetStepGoal.class);
                 startActivity(intent);
             }
         });
@@ -172,31 +211,21 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
 
         numSteps++;
         distance =  distance + stepLength;
-
         TvSteps.setText(TEXT_NUM_STEPS + numSteps);
         displayDistance(distance);
         // send value to the data base here
         addData(numSteps, 2);
         mDatabaseHelper.addDistance(distance);
 
-        if (firstStepTime == 0){ // makes sure this is the first step
-            firstStepTime = SystemClock.elapsedRealtime();
-        }
-        else{
-            // Compare the time of the first step to the next step
-            nextStepTime = SystemClock.elapsedRealtime();
-            timeInterval = nextStepTime - firstStepTime;
-            firstStepTime = nextStepTime;
-            if(timeInterval<= 2500){
-                walkingTime = walkingTime + timeInterval;
+        Cursor data = mDatabaseHelper.getFirstRow();
+        data.moveToFirst();
+        stepGoal = data.getInt(5);// Get data at column 5
+        data.close();
 
-                Log.d(TAG, "Walking time: " + walkingTime);
-                TvTime.setText("Walking time: " + walkingTime);
-            }
-            else{
-                Log.d(TAG, "" + timeInterval);
-            }
-
+        if(numSteps == stepGoal){
+            // show the notification
+            Log.d(TAG, "Step goal has been reached: " + stepGoal);
+            notificationManager.notify(notificationId, mBuilder.build());
         }
 
         if (firstStepTime == 0){ // makes sure this is the first step
@@ -210,11 +239,10 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
             if(timeInterval<= 2500){
                 walkingTime = walkingTime + timeInterval;
                 distance = distance + stepLength;
-                Log.d(TAG, "Walking time: " + walkingTime);
-                TvTime.setText("Walking time: " + walkingTime);
+                Log.d(TAG, TEXT_TIME + walkingTime);
+                TvTime.setText( TEXT_TIME+ walkingTime);
             }
             else{
-                //toastMessage("Too slow fam");
                 Log.d(TAG, "" + timeInterval);
             }
 
@@ -222,8 +250,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
 
 
 
-
-    }
+}
 
 
 
