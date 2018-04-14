@@ -27,7 +27,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 
-public class StepActivity extends AppCompatActivity implements SensorEventListener, StepListener {
+public class StepActivity extends AppCompatActivity implements SensorEventListener/*, StepListener */{
+    private Cursor data;
     private TextView TvSteps, TvTime, TvDistance;
     private StepDetector simpleStepDetector;
     private SensorManager sensorManager;
@@ -57,7 +58,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
 
 
         //Set the notification's tap action
-        intentA = new Intent(this, AlertDetails.class);
+       /* intentA = new Intent(this, AlertDetails.class);
         intentA.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);//helps preserve the user's expected navigation experience after they open the app via the notification.
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intentA, 0);
 
@@ -69,14 +70,15 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 // Set the intent that will fire when the user taps the notification
                 .setContentIntent(pendingIntent)
-                .setAutoCancel(true);//automatically removes the notification when the user taps it.
+                .setAutoCancel(true);//automatically removes the notification when the user taps it. */
 
 
         // Get an instance of the SensorManager
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        simpleStepDetector = new StepDetector();
-        simpleStepDetector.registerListener(this);
+        //sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        //accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        //simpleStepDetector = new StepDetector();
+        //simpleStepDetector.registerListener(this);
+        //sensorManager.registerListener(StepActivity.this, accel, SensorManager.SENSOR_DELAY_FASTEST);
         mDatabaseHelper = DatabaseHelper.getInstance(this);
         startTime = SystemClock.elapsedRealtime();// get the system time
         TvSteps = (TextView) findViewById(R.id.tv_steps);
@@ -85,7 +87,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         Button btnClear = (Button) findViewById(R.id.btn_clear);
         Button btnGraph = (Button) findViewById(R.id.btn_graph);
         Button btnSetGoal = (Button) findViewById(R.id.btn_setGoal);
-        notificationManager = NotificationManagerCompat.from(this);
+        /*notificationManager = NotificationManagerCompat.from(this);*/
 
         timeInterval = 0;
         firstStepTime = 0;
@@ -99,7 +101,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
 
 
 
-        Timer updateTimer = new Timer();
+        //Timer updateTimer = new Timer(); --REMOVE--
 
 
         // setting up the number of steps
@@ -118,7 +120,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         else{
             //Data base has something in it
             // set the numSteps to the value.
-            Cursor data = mDatabaseHelper.getFirstRow();
+            data = mDatabaseHelper.getFirstRow();
             data.moveToFirst();
             numSteps = data.getInt(2); //getInt(2) column 2 has total number of steps
             distance = data.getDouble(4); //Column 4 is the distance
@@ -134,7 +136,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         }
 
 
-        sensorManager.registerListener(StepActivity.this, accel, SensorManager.SENSOR_DELAY_FASTEST);
+
 
 
         btnClear.setOnClickListener(new View.OnClickListener() {
@@ -143,6 +145,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
             public void onClick(View arg0) {
                 mDatabaseHelper.clearDataBase();
                 mDatabaseHelper = DatabaseHelper.getInstance(StepActivity.this);
+                mDatabaseHelper.addToDelete("y");
                 numSteps = 0;
                 refStep = 0;
                 distance = 0;
@@ -176,7 +179,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         });
 
 
-        updateTimer.schedule(new TimerTask() {
+       /*updateTimer.schedule(new TimerTask() { --REMOVE--
             public void run() {
                 try {
                     Log.d(TAG, "2 mins");
@@ -184,7 +187,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
                     * when the app is started refStep is set to the value of numSteps (number of steps done)
                     * if numstep > refstep, the user has taking new steps within the time frame and this is added to the graph, if not add zero (no steps) into the graph
                     * refStep is set to the new value of numStep again to ensure continuous comparison
-                    */
+
                     if (numSteps > refStep) {
                         newStepCount = numSteps - refStep;
                         addData(newStepCount, 1);
@@ -201,7 +204,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
                 }
             }
 
-        }, 0, 120000); //60,000 milli secs = 60 secs = 1 minute
+        }, 0, 120000); //60,000 milli secs = 60 secs = 1 minute */
 
     }
 
@@ -232,7 +235,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
-    @Override
+    /**@Override
     public void step(long timeNs) {
 
         numSteps++;
@@ -373,6 +376,11 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         public  void onReceive(Context context, Intent intent){
             if(intent.getAction().equals(REFRESH)){
                 Log.d(TAG, "The service says hello.");
+                data = mDatabaseHelper.getFirstRow();
+                data.moveToFirst();
+                numSteps = data.getInt(2); //getInt(2) column 2 has total number of steps
+                TvSteps.setText(TEXT_NUM_STEPS + numSteps);
+                data.close();
             }
         }
     }

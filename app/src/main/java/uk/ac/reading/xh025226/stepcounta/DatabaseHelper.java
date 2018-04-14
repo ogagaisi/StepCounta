@@ -21,9 +21,10 @@ public class DatabaseHelper extends SQLiteOpenHelper{
     private static final String COL4 = "Distance";
     private static final String COL5 = "StepGoal";
     private static final String COL6 = "WalkingTime";
+    private static final String COL7 = "Deleted";
 
 
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 7;
 
     public DatabaseHelper(Context context){
         super(context, TABLE_NAME, null, DATABASE_VERSION);
@@ -40,7 +41,7 @@ public class DatabaseHelper extends SQLiteOpenHelper{
     public void onCreate(SQLiteDatabase Db){ // Creates the table.
 
         String createTable = "CREATE TABLE " + TABLE_NAME + " (ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                COL1 +" TEXT, " + COL2 + " INTEGER DEFAULT 0, " + COL3 + " REAL, " + COL4 + " REAL DEFAULT 0.0, " + COL5 + " INTEGER DEFAULT 0, " + COL6  + " INTEGER DEFAULT 0)";
+                COL1 +" TEXT, " + COL2 + " INTEGER DEFAULT 0, " + COL3 + " REAL, " + COL4 + " REAL DEFAULT 0.0, " + COL5 + " INTEGER DEFAULT 0, " + COL6  + " INTEGER DEFAULT 0, " + COL7 + " TEXT DEFAULT 'N')";
         Db.execSQL(createTable);
         Log.d(TAG, "onCreate was called, Database has been updated");
     }
@@ -233,6 +234,42 @@ public class DatabaseHelper extends SQLiteOpenHelper{
         // if the table is populated, update the value of "walkingTime" else insert a value there
         if(icount>0){ // table is not empty
             Log.d(TAG, "addData: Adding " + item + " to " + COL6 + " in " + TABLE_NAME);
+
+            result = db.update(TABLE_NAME, contentValues, "ID = 1", null); //Represents if data was inserted correctly or not . -1 if data was not inserted correctly or >0 if correct
+
+
+        }
+        else {//
+
+            result = db.insert(TABLE_NAME, null, contentValues);
+            Log.d(TAG, "Table was empty but " + item + " has been added to the table");
+
+        }
+
+
+        if (result == -1){
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+    public boolean addToDelete(String item){ //Adds Data to the DataBase
+        Log.d(TAG, "addToDelete() was called");
+        SQLiteDatabase db = this.getWritableDatabase(); //Declares SQLite database object
+        ContentValues contentValues = new ContentValues(); // Helps write to the database
+        contentValues.put(COL7, item); // puts the data into column 7
+        long result = -1;
+
+        // used to check if the table is empty
+        String count = "SELECT count(*) FROM " + TABLE_NAME;
+        Cursor mcursor = db.rawQuery(count, null);
+        mcursor.moveToFirst();
+        int icount = mcursor.getInt(0);
+        mcursor.close();
+        // if the table is populated, update the value of "deleted" else insert a value there
+        if(icount>0){ // table is not empty
+            Log.d(TAG, "addData: Adding " + item + " to " + COL7 + " in " + TABLE_NAME);
 
             result = db.update(TABLE_NAME, contentValues, "ID = 1", null); //Represents if data was inserted correctly or not . -1 if data was not inserted correctly or >0 if correct
 
