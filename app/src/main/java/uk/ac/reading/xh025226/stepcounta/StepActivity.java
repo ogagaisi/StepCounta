@@ -1,7 +1,10 @@
 package uk.ac.reading.xh025226.stepcounta;
 
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -30,13 +33,15 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager sensorManager;
     private Sensor accel;
     private static final String TEXT_NUM_STEPS = "Number of Steps: "; // output
+    private static final String REFRESH = "REFRESH_DATA_INTENT";
     private static final String TEXT_DISTANCE = "Distance: ";
     private static final String TEXT_TIME = "Walking time: ";
     private static final String TAG = "StepActivity", textTitle ="New Achievement", textContent ="You have reached your step goal, good job";
     private int numSteps,refStep, newStepCount, stepGoal;
     private static final int notificationId =1000;
-    private long startTime,timeInterval,firstStepTime, nextStepTime, walkingTime;
+    private long startTime,timeInterval,firstStepTime, nextStepTime, walkingTime, miliHour,miliMin;
     private double height, distance, stepLength;
+    private DataUpdateReceiver dataUpdateReceiver;
     DatabaseHelper mDatabaseHelper;
     Intent intentA;
     NotificationManagerCompat notificationManager;
@@ -47,6 +52,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        startService(new Intent(this, myService.class));
         setContentView(R.layout.step_activity);
 
 
@@ -87,6 +93,11 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         walkingTime = 0;
         height = 0;
         stepGoal = 0;
+        miliMin = 60000L;
+        miliHour = miliMin * 60L;
+
+
+
 
         Timer updateTimer = new Timer();
 
@@ -100,6 +111,8 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
             stepLength = 0;
             TvSteps.setText(TEXT_NUM_STEPS + numSteps);
             displayDistance(distance);
+            TvTime.setText(TEXT_TIME+ "0h:0m");
+
             Log.d(TAG, "The database is empty");
         }
         else{
@@ -111,11 +124,10 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
             distance = data.getDouble(4); //Column 4 is the distance
             refStep = numSteps;
             height = data.getDouble(3); //Column 3 has the height
-            //-- Remove ST
-            Log.d(TAG, "Height: " + height);
-            //-- Remove End
+            walkingTime = data.getLong(6); //Coumn 6 has the walking time
             stepLength = height * 0.415;//ratio of height to stepLength
             TvSteps.setText(TEXT_NUM_STEPS + numSteps);
+            displayWalkingTime(walkingTime,miliHour,miliMin);
             displayDistance(distance);
 
 
@@ -139,6 +151,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
                 Log.d(TAG, "The dataBase was deleted.");
                 TvSteps.setText(TEXT_NUM_STEPS + numSteps);
                 TvTime.setText(TEXT_TIME + walkingTime);
+                TvTime.setText(TEXT_TIME+ "0h:0m");
                 displayDistance(distance);
 
             }
@@ -192,6 +205,19 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
+    @Override
+    public void onResume(){
+        super.onResume();
+        if(dataUpdateReceiver == null) dataUpdateReceiver = new DataUpdateReceiver();
+        IntentFilter intentFilter = new IntentFilter(REFRESH);
+        registerReceiver(dataUpdateReceiver, intentFilter);
+    }
+
+    @Override
+    public void onPause(){
+        super.onPause();
+        if (dataUpdateReceiver != null) unregisterReceiver(dataUpdateReceiver);
+    }
 
 
     @Override
@@ -241,7 +267,14 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
                 walkingTime = walkingTime + timeInterval;
                 distance = distance + stepLength;
                 Log.d(TAG, TEXT_TIME + walkingTime);
-                TvTime.setText( TEXT_TIME+ walkingTime);
+                if(walkingTime >= miliMin){ // displays the walking time in the format h:m
+                    displayWalkingTime(walkingTime,miliHour,miliMin);
+                    mDatabaseHelper.addWalkingTime(walkingTime);
+                }
+                else{
+                    TvTime.setText(TEXT_TIME+ "0h:0m");
+                }
+
             }
             else{
                 Log.d(TAG, "" + timeInterval);
@@ -319,6 +352,29 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
      */
     private void toastMessage(String message){
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Displays the walling time in h:m format
+     * @param walkingTime the walking time
+     * @param  miliHour an hour in mili seconds
+     * @param miliMin a minute in mili seconds
+     */
+    
+    private void displayWalkingTime(long walkingTime,long miliHour, long miliMin){
+        long hours = walkingTime/ miliHour; //converts time in nanosec to hours and drops the decimal part
+        long remainder = walkingTime - hours * miliHour;
+        long mins = remainder/ miliMin;
+
+        TvTime.setText(TEXT_TIME+ hours + "h:" + mins +"m");
+    }
+    private class DataUpdateReceiver extends BroadcastReceiver{
+        @Override
+        public  void onReceive(Context context, Intent intent){
+            if(intent.getAction().equals(REFRESH)){
+                Log.d(TAG, "The service says hello.");
+            }
+        }
     }
 }
 
