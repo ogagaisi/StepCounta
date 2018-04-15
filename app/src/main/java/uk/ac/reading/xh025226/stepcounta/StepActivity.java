@@ -58,7 +58,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
 
 
         //Set the notification's tap action
-       /* intentA = new Intent(this, AlertDetails.class);
+        intentA = new Intent(this, AlertDetails.class);
         intentA.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);//helps preserve the user's expected navigation experience after they open the app via the notification.
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intentA, 0);
 
@@ -70,7 +70,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 // Set the intent that will fire when the user taps the notification
                 .setContentIntent(pendingIntent)
-                .setAutoCancel(true);//automatically removes the notification when the user taps it. */
+                .setAutoCancel(true);//automatically removes the notification when the user taps it.
 
 
         // Get an instance of the SensorManager
@@ -87,7 +87,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         Button btnClear = (Button) findViewById(R.id.btn_clear);
         Button btnGraph = (Button) findViewById(R.id.btn_graph);
         Button btnSetGoal = (Button) findViewById(R.id.btn_setGoal);
-        /*notificationManager = NotificationManagerCompat.from(this);*/
+        notificationManager = NotificationManagerCompat.from(this);
 
         timeInterval = 0;
         firstStepTime = 0;
@@ -379,7 +379,19 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
                 data = mDatabaseHelper.getFirstRow();
                 data.moveToFirst();
                 numSteps = data.getInt(2); //getInt(2) column 2 has total number of steps
+                distance = data.getInt(4);
+                stepGoal = data.getInt(5);// Get data at column 5
+                walkingTime = data.getLong(6); //Column 6 has the walking time
+
+                // show the notification
+                if(numSteps == stepGoal){
+                    Log.d(TAG, "Step goal has been reached: " + stepGoal);
+                    notificationManager.notify(notificationId, mBuilder.build());
+                }
+
                 TvSteps.setText(TEXT_NUM_STEPS + numSteps);
+                displayDistance(distance);
+                displayWalkingTime(walkingTime,miliHour,miliMin);
                 data.close();
             }
         }

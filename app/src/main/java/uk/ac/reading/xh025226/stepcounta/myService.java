@@ -11,6 +11,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
@@ -81,22 +82,6 @@ public class myService extends Service implements SensorEventListener, StepListe
     public void onCreate() {
         // TODO Auto-generated method stub
         Log.d(TAG, "service created");
-        //Set the notification's tap action
-        intentA = new Intent(this, AlertDetails.class);
-        intentA.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);//helps preserve the user's expected navigation experience after they open the app via the notification.
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intentA, 0);
-
-        //Sets the notification content
-        mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.trophy)
-                .setContentTitle(textTitle)
-                .setContentText(textContent)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                // Set the intent that will fire when the user taps the notification
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true);//automatically removes the notification when the user taps it.
-
-
 
         // Get an instance of the SensorManager
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -178,10 +163,33 @@ public class myService extends Service implements SensorEventListener, StepListe
         data.moveToFirst();
         if(data.getString(7).equals("y")) { //Database has been cleared
             numSteps = 0;
+            distance = 0;
+            walkingTime = 0;
             mDatabaseHelper.addToDelete("N");
         }
         numSteps++;
+        distance =  distance + stepLength;
+
         addData(numSteps, 2); // add steps to totalSteps in the data base
+        mDatabaseHelper.addDistance(distance);
+
+        // Displays walking time
+        if (firstStepTime == 0){ // makes sure this is the first step
+            firstStepTime = SystemClock.elapsedRealtime();
+        }
+        else{
+            // Compare the time of the first step to the next step
+            nextStepTime = SystemClock.elapsedRealtime();
+            timeInterval = nextStepTime - firstStepTime;
+            firstStepTime = nextStepTime;
+            if(timeInterval<= 2500){// only detects walking time if steps are upto 2.5 seconds apart
+                walkingTime = walkingTime + timeInterval;
+                if(walkingTime >= miliMin){ // displays the walking time in the format h:m
+                    // write to the dataBase e.g. walkIsOver1Min = YES
+                    mDatabaseHelper.addWalkingTime(walkingTime);
+                }
+            }
+        }
         sendBroadcast(new Intent("REFRESH_DATA_INTENT"));
         data.close();
     }
